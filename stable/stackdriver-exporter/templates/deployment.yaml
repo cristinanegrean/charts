@@ -1,32 +1,26 @@
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ template "stackdriver-exporter.fullname" . }}
+  name: {{ .Chart.Name }}
   labels:
-    chart: {{ template "stackdriver-exporter.chart" . }}
-    app: {{ template "stackdriver-exporter.name" . }}
+    app: stackdriver-exporter
     release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ template "stackdriver-exporter.name" . }}
+      app: stackdriver-exporter
       release: "{{ .Release.Name }}"
   strategy:
     rollingUpdate:
-      maxSurge: 1
+      maxSurge: {{ .Values.replicaCount }}
       maxUnavailable: 0
-    type: RollingUpdate
+    type: {{ .Values.updateStrategy }}
   template:
     metadata:
       labels:
-        app: {{ template "stackdriver-exporter.name" . }}
-        release: "{{ .Release.Name }}"
-{{- if .Values.annotations }}
-      annotations:
-{{ toYaml .Values.annotations | indent 8 }}
-{{- end }}
+        app: stackdriver-exporter
+        release:  "{{ .Release.Name }}"
     spec:
       restartPolicy: {{ .Values.restartPolicy }}
       containers:
@@ -34,43 +28,28 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["stackdriver_exporter"]
-          env:
-            - name: STACKDRIVER_EXPORTER_GOOGLE_PROJECT_ID
-              value: {{ .Values.stackdriver.projectId | quote }}
-            - name: STACKDRIVER_EXPORTER_MONITORING_METRICS_TYPE_PREFIXES
-              value: {{ .Values.stackdriver.metrics.typePrefixes | quote }}
-            - name: STACKDRIVER_EXPORTER_MONITORING_METRICS_INTERVAL
-              value: {{ .Values.stackdriver.metrics.interval | quote }}
-            - name: STACKDRIVER_EXPORTER_MONITORING_METRICS_OFFSET
-              value: {{ .Values.stackdriver.metrics.offset | quote }}
-            - name: STACKDRIVER_EXPORTER_WEB_LISTEN_ADDRESS
-              value: {{ .Values.web.listenAddress | quote }}
-            - name: STACKDRIVER_EXPORTER_WEB_TELEMETRY_PATH
-              value: {{ .Values.web.path | quote }}
-            - name: STACKDRIVER_EXPORTER_MAX_RETRIES
-              value: {{ .Values.stackdriver.maxRetries | quote }}
-            - name: STACKDRIVER_EXPORTER_HTTP_TIMEOUT
-              value: {{ .Values.stackdriver.httpTimeout | quote }}
-            - name: STACKDRIVER_EXPORTER_MAX_BACKOFF_DURATION
-              value: {{ .Values.stackdriver.maxBackoff | quote }}
-            - name: STACKDRIVER_EXPORTER_BACKODFF_JITTER_BASE
-              value: {{ .Values.stackdriver.backoffJitter | quote }}
-            - name: STACKDRIVER_EXPORTER_RETRY_STATUSES
-              value: {{ .Values.stackdriver.retryStatuses | quote}}
+          envFrom:
+            - configMapRef:
+                name: stackdriver-exporter-config
           resources:
-{{ toYaml .Values.resources | indent 12 }}
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
           ports:
             - containerPort: {{ .Values.service.httpPort }}
               name: http
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 30
-            timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
               port: http
             initialDelaySeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
             timeoutSeconds: 10

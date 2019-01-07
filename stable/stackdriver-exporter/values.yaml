@@ -1,5 +1,6 @@
 # Number of exporters to run
 replicaCount: 1
+updateStrategy: RollingUpdate
 
 # Restart policy for container
 restartPolicy: Always
@@ -9,44 +10,31 @@ image:
   tag: v0.6.0
   pullPolicy: IfNotPresent
 
-resources: {}
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-
 service:
   type: ClusterIP
   httpPort: 9255
   annotations: {}
 
-stackdriver:
+env:
   # The Google Project ID to gather metrics for
-  projectId: "FALSE"
-  # Max number of retries that should be attempted on 503 errors from Stackdriver
-  maxRetries: 0
-  # How long should Stackdriver_exporter wait for a result from the Stackdriver API
-  httpTimeout: 10s
-  # Max time between each request in an exp backoff scenario
-  maxBackoff: 5s
-  # The amount of jitter to introduce in an exp backoff scenario
-  backoffJitter: 1s
-  # The HTTP statuses that should trigger a retry
-  retryStatuses: 503
-  metrics:
-    # The prefixes to gather metrics for, we default to just CPU metrics.
-    typePrefixes: 'compute.googleapis.com/instance/cpu'
-    # The frequency to request
-    interval: '5m'
-    # How far into the past to offset
-    offset: '0s'
-
-web:
+  STACKDRIVER_EXPORTER_GOOGLE_PROJECT_ID:
+  # The prefixes to gather metrics for
+  STACKDRIVER_EXPORTER_MONITORING_METRICS_TYPE_PREFIXES: "dataflow.googleapis.com/job,pubsub.googleapis.com/subscription,pubsub.googleapis.com/topic,pubsub.googleapis.com/snapshot,compute.googleapis.com/instance/uptime,compute.googleapis.com/instance/cpu,compute.googleapis.com/instance/network,cloudsql.googleapis.com/database"
+  # The frequency to request with
+  STACKDRIVER_EXPORTER_MONITORING_METRICS_INTERVAL: 5m
+  # How far into the past to offset
+  STACKDRIVER_EXPORTER_MONITORING_METRICS_OFFSET: 0s
   # Port to listen on
-  listenAddress: ':9255'
+  STACKDRIVER_EXPORTER_WEB_LISTEN_ADDRESS: ":9255"
   # Path under which to expose metrics.
-  path: /metrics
-
-annotations: {}
+  STACKDRIVER_EXPORTER_WEB_TELEMETRY_PATH: "/metrics"
+  # Max number of retries that should be attempted on 503 errors from Stackdriver
+  STACKDRIVER_EXPORTER_MAX_RETRIES: 0
+  # Max time between each request in an exp backoff scenario
+  STACKDRIVER_EXPORTER_MAX_BACKOFF_DURATION: 5s
+  # The amount of jitter to introduce in a exp backoff scenario
+  STACKDRIVER_EXPORTER_BACKODFF_JITTER_BASE: 1s
+  # The HTTP statuses that should trigger a retry
+  STACKDRIVER_EXPORTER_RETRY_STATUSES: 503
+  # How long should Stackdriver_exporter wait for a result from the Stackdriver API
+  STACKDRIVER_EXPORTER_HTTP_TIMEOUT: 10s

@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+    labels:
+        prometheus: monitoring
+    name: stackdriver-exporter-prometheus-metrics
+    namespace: monitoring
+spec:
+    endpoints:
+        - honorLabels: true
+          interval: 10s
+          path: /metrics
+          port: stackdrivermetrics
+          scheme: http
+    jobLabel: stackdriver-exporter-prometheus-metrics
+    namespaceSelector:
+        matchNames:
+            - monitoring
+    selector:
+        matchLabels:
+            app: {{ .Release.Name }}

@@ -1,22 +1,15 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: {{ template "stackdriver-exporter.fullname" . }}
+  name: stackdriver-exporter-service
   labels:
-    chart: {{ template "stackdriver-exporter.chart" . }}
-    app: {{ template "stackdriver-exporter.name" . }}
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-{{- if .Values.service.annotations }}
-  annotations:
-{{ toYaml .Values.service.annotations | indent 4 }}
-{{- end }}
+    app: {{ .Release.Name }}
+    release: {{ .Release.Revision | quote }}
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - name: http
+    - name: stackdrivermetrics
       port: {{ .Values.service.httpPort }}
       protocol: TCP
   selector:
-    app: {{ template "stackdriver-exporter.name" . }}
-    release: "{{ .Release.Name }}"
+    app: {{ .Release.Name }}
